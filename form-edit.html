@@ -522,7 +522,7 @@
     }
 
     #formPreviewCard {
-      height: 701px;
+
       overflow: hidden;
       display: flex;
       flex-direction: column;
@@ -535,7 +535,7 @@
     }
 
     #formPreviewCard {
-      height: 701px;
+
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -554,10 +554,26 @@
       flex-direction: column;
     }
 
-    #formPreviewCard,
     #editToolsCard {
-      height: auto !important;
-      align-self: stretch !important;
+      height: 701px;
+    }
+
+    #formPreviewCard {
+      height: 701px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #editToolsCard,
+    #formPreviewCard {
+      box-sizing: border-box;
+    }
+
+    #formPreviewCard>.form-inner {
+      padding-top: 32px;
+      /* match editToolsCard p-8 */
+      padding-bottom: 32px;
     }
   </style>
 
@@ -801,10 +817,10 @@
               class="contact-wrapper border p-10 relative z-30  dark:bg-dark-primary dark:border-dark-primary border-gray-100">
               <!-- START: Two cards layout -->
               <div class="w-full">
-                <div class="flex flex-row gap-6 items-stretch">
+                <div class="flex flex-row gap-6 items-start">
                   <!-- LEFT CARD: Form Preview  -->
                   <div id="formPreviewCard"
-                    class="border border-gray-100 dark:border-dark-primary rounded-2xl p-0 w-full h-[701px]  dark:bg-dark-primary"
+                    class="border border-gray-100 dark:border-dark-primary rounded-2xl p-0 w-full dark:bg-dark-primary"
                     style="flex:0 0 60%; min-width:380px;">
                     <div class="form-inner">
                       <div class="pt-6"></div>
@@ -1404,7 +1420,6 @@
         borderRadius: '12px',
         transition: 'background .22s ease, color .22s ease',
         zIndex: '1',
-        height: '100%',
         flex: '1 1 auto',
         minHeight: '0'
       });
@@ -2688,10 +2703,7 @@
       align-items: stretch !important;
     }
 
-    #editToolsCard,
-    #formPreviewCard {
-      height: 701px;
-    }
+
 
     #formPreviewCard {
       overflow: hidden;
@@ -2842,6 +2854,26 @@
 
     });
   </script>
+  <script>
+    function syncCardHeights() {
+      const editCard = document.getElementById("editToolsCard");
+      const previewCard = document.getElementById("formPreviewCard");
+      if (!editCard || !previewCard) return;
+
+      const dpr = window.devicePixelRatio || 1;
+      const rawHeight = editCard.getBoundingClientRect().height;
+
+      const snappedHeight = Math.round(rawHeight * dpr) / dpr;
+
+      previewCard.style.height = snappedHeight + "px";
+      previewCard.style.maxHeight = snappedHeight + "px";
+    }
+
+    window.addEventListener("load", syncCardHeights);
+    window.addEventListener("resize", syncCardHeights);
+  </script>
+
+
 
 </body>
 
