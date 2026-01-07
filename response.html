@@ -1,0 +1,926 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="assets/images/favicon.png" />
+  <title>Profile | AI Agent - AI UI Kit</title>
+  <link href="assets/css/output.css" rel="stylesheet" />
+  <style>
+    html.dark {
+      background-color: #000000;
+    }
+
+    [x-cloak] {
+      display: none !important;
+    }
+
+    .modal-scroll::-webkit-scrollbar {
+      width: 0px;
+    }
+
+    .modal-scroll {
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    /* Popup animation */
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.96) translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    .animate-scaleIn {
+      animation: scaleIn 0.2s ease-out;
+    }
+
+    /* Invisible scrollbar but scroll still works */
+
+    .page-blur {
+      filter: blur(6px);
+      transition: filter 0.2s ease;
+    }
+
+    #responsesCard {
+      flex: 1 1 0%;
+      min-width: 0;
+      transition: width 0.3s ease;
+    }
+
+    #chatbotWrapper {
+      width: 28%;
+      min-width: 280px;
+      height: 100%;
+      flex-shrink: 0;
+      transition: width 0.3s ease;
+      margin-left: auto;
+      /* 👈 THIS pins it to the right */
+    }
+
+    #chatbotCard {
+      height: 100%;
+      border-radius: 16px 0 0 16px;
+      display: flex;
+      flex-direction: column;
+      border-radius: 16px;
+    }
+
+    /* Hide content only AFTER shrink */
+    #chatbotWrapper.collapsed #chatbotBody {
+      opacity: 0;
+      pointer-events: none;
+      border-radius: 16px;
+    }
+
+    #chatbotWrapper.collapsed {
+      width: 56px;
+      min-width: 56px;
+    }
+
+    #chatbotCard button,
+    #chatbotCard #sendBtn {
+      opacity: 1 !important;
+      visibility: visible !important;
+      display: inline-flex !important;
+      pointer-events: auto !important;
+    }
+
+    /* Modal text colors – hard locked */
+    html.dark #modalBody .modal-label {
+      color: #ffffff;
+      /* gray-400 */
+    }
+
+    html.dark #modalBody .modal-value {
+      color: #9ca3af;
+      /* gray-200 */
+    }
+
+    html:not(.dark) #modalBody .modal-label {
+      color: #4b5563;
+      /* gray-600 */
+    }
+
+    html:not(.dark) #modalBody .modal-value {
+      color: #111827;
+      /* gray-900 */
+    }
+
+    /* Add this to your <style> block */
+    html.dark #chatInput {
+      color: #e6eef8 !important;
+      /* or #ffffff for full white */
+    }
+
+    #chatInput {
+      min-height: 40px;
+      /* or whatever matches your padding + line-height */
+      line-height: 1.5;
+      /* ensure cursor aligns with text */
+      padding: 8px 12px;
+      /* same as your bubble padding */
+      vertical-align: top;
+      resize: none;
+      /* optional, if you don’t want manual resize */
+    }
+
+    #chatInput {
+      text-align: left;
+      /* makes text start at the left */
+      vertical-align: top;
+      /* ensures cursor is at the top */
+      padding: 8px 12px;
+      /* match bubble padding */
+      line-height: 1.5;
+      /* cursor aligns properly */
+      min-height: 40px;
+      /* one line minimum */
+      resize: none;
+      /* optional */
+    }
+
+    /* Dark mode card borders & highlight */
+    .dark #responsesCard,
+    .dark #chatbotCard {
+      border-color: #3f4a63;
+      /* darker/contrast border */
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      /* subtle lift */
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    /* Optional: hover effect for extra highlight */
+    .dark .bg-dark-secondary:hover {
+      border-color: #6366f1;
+      /* purple-ish highlight */
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+    }
+
+    #responsesCard {
+      flex: 1 1 0%;
+      min-width: 0;
+    }
+    #chatbotInput {
+  max-height: 140px;   /* pick what feels right */
+  overflow-y: auto;
+  resize: none;
+}
+
+  </style>
+</head>
+
+<body class="bg-gray-50 dark:bg-dark-secondary" x-data="{      
+  activeDropdown: null,
+  darkMode: localStorage.getItem('darkMode') === 'true',
+
+  toggleDarkMode() {
+    this.darkMode = !this.darkMode;
+    localStorage.setItem('darkMode', this.darkMode);
+
+    if (this.darkMode) {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    }
+  },
+
+  closeDropdowns() {
+    this.activeDropdown = null;
+  },
+
+  init() {
+    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+
+    if (savedDarkMode) {
+      this.darkMode = true;
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      this.darkMode = false;
+      document.documentElement.classList.add('light');
+      document.documentElement.classList.remove('dark');
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.nav-item') &&
+          !e.target.closest('.dropdown-menu') &&
+          !e.target.closest('.mobile-dropdown-toggle')) {
+        this.closeDropdowns();
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth >= 1024) {
+        this.activeDropdown = null;
+      }
+    });
+  }
+}">
+
+  <header
+    class="bg-white dark:bg-dark-primary border-b dark:border-gray-800 border-gray-100 sticky top-0 z-50 py-2 lg:py-0">
+    <div class="px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between">
+        <!-- Logo and Mobile Menu Button -->
+        <div class="flex">
+          <div class="flex-shrink-0 flex items-center">
+
+            <!-- Logo -->
+            <div class="flex items-center">
+              <!-- Logo -->
+              <a href="index.html">
+                <img src="assets/images/new-black-logo.svg" class="block dark:hidden"
+                  style="width: 160px; height: 30px;" alt="">
+                <img src="assets/images/new-white-logo.svg" style="width: 160px; height: 30px;"
+                  class="hidden dark:block" alt="">
+              </a>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Desktop Navigation -->
+        <nav class="hidden lg:flex lg:items-center">
+          <a href="index.html"
+            class="text-gray-500 dark:text-gray-400 text-sm px-4 py-6 hover:text-primary-500 font-medium">Home</a>
+
+
+          <!-- Pages Dropdown (Desktop) -->
+          <div class="relative nav-item">
+            <button
+              class="text-gray-500 group dark:text-gray-400 hover:text-primary-400 text-sm inline-flex items-center px-4 py-6 font-medium rounded-full">
+              Pages
+              <svg class="dropdown-arrow ml-1 h-4 w-4 transition-transform duration-200"
+                xmlns="http://www.w3.org/2000/svg" width="17" height="16" viewBox="0 0 17 16" fill="none">
+                <path d="M4.33301 5.91666L8.49967 10.0833L12.6663 5.91666" stroke="currentColor" stroke-width="1.5"
+                  stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </button>
+
+            <!-- Pages dropdown menu -->
+            <div
+              class="dropdown-menu absolute left-0 w-[266px] bg-white dark:bg-dark-primary dark:border-gray-800 rounded-2xl shadow-theme-lg border border-gray-100 p-3 z-50 hidden">
+
+              <div class="space-y-1">
+                <a href="dashboard.html"
+                  class="flex items-center px-4 py-3 hover:text-gray-800 dark:hover:text-white/90 text-sm font-medium rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white /5">
+                  Dashboard
+                </a>
+                <a href="form-generator.html"
+                  class="flex items-center px-4 py-3 hover:text-gray-800 dark:hover:text-white/90 text-sm font-medium rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white /5">
+                  Form Generator
+                </a>
+                <a href="form-edit.html"
+                  class="flex items-center px-4 py-3 hover:text-gray-800 dark:hover:text-white/90 text-sm font-medium rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white /5">
+                  Form Edit
+                </a>
+                <a href="signin.html"
+                  class="flex items-center px-4 py-3 hover:text-gray-800 dark:hover:text-white/90 text-sm font-medium rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white /5">
+                  Sign In
+                </a>
+                <a href="signup.html"
+                  class="flex items-center px-4 py-3 hover:text-gray-800 dark:hover:text-white/90 text-sm font-medium rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white /5">
+                  Sign Up
+                </a>
+                <a href="forgot-password.html"
+                  class="flex items-center px-4 py-3 hover:text-gray-800 dark:hover:text-white/90 text-sm font-medium rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white /5">
+                  Reset Password
+                </a>
+                <a href="privacy.html"
+                  class="flex items-center px-4 py-3 hover:text-gray-800 dark:hover:text-white/90 text-sm font-medium rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white /5">
+                  Privacy Policy
+                </a>
+                <a href="404.html"
+                  class="flex items-center px-4 py-3 hover:text-gray-800 dark:hover:text-white/90 text-sm font-medium rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-white /5">
+                  404 Error
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <a href="contact.html"
+            class="text-gray-500 dark:text-gray-400 text-sm px-4 py-6 hover:text-primary-500 font-medium">Contact</a>
+        </nav>
+
+        <!-- Right side buttons -->
+        <div class="flex items-center">
+          <!-- Dark Mode Toggle Start -->
+          <button id="theme-toggle" @click="toggleDarkMode()"
+            class="relative inline-flex items-center dark:hover:bg-white/5 dark:hover:text-white/90 hover:bg-gray-100 hover:text-gray-800 text-gray-500 dark:text-gray-400 justify-center border border-gray-200 dark:border-gray-700 rounded-full size-11">
+            <!-- Moon (Light mode) -->
+            <svg x-show="!darkMode" class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 20"
+              stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                d="M6.24683 7.08492C6.24683 10.7677 9.23232 13.7532 12.9151 13.7532C14.6687 13.7532 16.2641 13.0764 17.4545 11.9697C16.584 15.2727 13.5765 17.7083 10.0001 17.7083C5.74289 17.7083 2.29175 14.2572 2.29175 9.99996C2.29175 6.42356 4.72736 3.41602 8.03036 2.54558C6.92367 3.73594 6.24683 5.33139 6.24683 7.08492Z" />
+            </svg>
+
+            <!-- Sun (Dark mode) -->
+            <svg x-show="darkMode" x-cloak class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+
+          </button>
+          <!-- Dark Mode Toggle End -->
+          <!-- Account dropdown -->
+          <div class="ml-4 relative flex-shrink-0" x-data="{ open: false }">
+            <div>
+              <button @click="open = !open" class="rounded-full text-sm font-medium focus:outline-none">
+                <img src="assets/images/users/user-1.png" class="w-11 h-11 rounded-full" alt="" />
+              </button>
+            </div>
+            <div x-show="open" x-cloak @click.away="open = false" class="origin-top-right absolute right-0 mt-2 w-[260px] shadow-lg  dark:border-gray-800 py-4 px-3 bg-white  border border-gray-200 dark:border-gray-800
+ rounded-2xl">
+              <div class="mb-4 px-3">
+                <span class="text-gray-700 text-sm font-medium dark:text-gray-400">musharof</span>
+                <p class="text-gray-500 text-sm dark:text-gray-400">
+                  <a href="cdn-cgi/l/email-protection.html" class="__cf_email__"
+                    data-cfemail="8bf9eae5efe4e6cbfbe2e6e1e4a5e8e4e6">[email&#160;protected]</a>
+                </p>
+              </div>
+              <div class="space-y-1">
+                <a href="#"
+                  class="px-3 py-2 flex gap-3 dark:hover:bg-white /[0.05] dark:text-gray-400 font-medium items-center text-sm text-gray-700 hover:text-gray-800 transition hover:bg-gray-100 rounded-lg dark:hover:text-white/90">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22" fill="none">
+                    <path fill-rule="evenodd" clip-rule="evenodd"
+                      d="M8.75211 6.7963C8.75211 5.3555 9.92011 4.1875 11.3609 4.1875C12.8017 4.1875 13.9697 5.3555 13.9697 6.7963C13.9697 8.2371 12.8017 9.4051 11.3609 9.4051C9.92011 9.4051 8.75211 8.2371 8.75211 6.7963ZM11.3609 2.6875C9.09168 2.6875 7.25211 4.52707 7.25211 6.7963C7.25211 9.06553 9.09168 10.9051 11.3609 10.9051C13.6301 10.9051 15.4697 9.06553 15.4697 6.7963C15.4697 4.52707 13.6301 2.6875 11.3609 2.6875ZM9.81431 12.208C6.38418 12.208 3.60352 14.9887 3.60352 18.4188V18.7367C3.60352 19.1509 3.9393 19.4867 4.35352 19.4867C4.76773 19.4867 5.10352 19.1509 5.10352 18.7367V18.4188C5.10352 15.8171 7.21261 13.708 9.81431 13.708H12.9088C15.5105 13.708 17.6196 15.8171 17.6196 18.4188V18.7367C17.6196 19.1509 17.9554 19.4867 18.3696 19.4867C18.7838 19.4867 19.1196 19.1509 19.1196 18.7367V18.4188C19.1196 14.9887 16.3389 12.208 12.9088 12.208H9.81431Z"
+                      fill="currentColor" />
+                  </svg>
+                  Edit profile
+                </a>
+                <a href="#"
+                  class="px-3 py-2 flex gap-3 dark:hover:bg-white /[0.05] dark:text-gray-400 font-medium items-center text-sm text-gray-700 hover:text-gray-800 transition hover:bg-gray-100 rounded-lg dark:hover:text-white/90">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22" fill="none">
+                    <path fill-rule="evenodd" clip-rule="evenodd"
+                      d="M9.61304 3.27092L12.3927 3.27092C12.7295 3.27092 13.0027 3.54406 13.0027 3.88104C13.0027 5.50501 14.7607 6.52057 16.1675 5.7084C16.4591 5.54 16.8321 5.63994 17.0005 5.93161L18.3905 8.33918C18.559 8.63101 18.459 9.00417 18.1672 9.17266C16.7604 9.98485 16.7604 12.0153 18.1672 12.8275C18.459 12.996 18.559 13.3692 18.3905 13.661L17.0005 16.0686C16.8321 16.3603 16.4591 16.4602 16.1674 16.2918C14.7607 15.4796 13.0027 16.4952 13.0027 18.1192C13.0027 18.4561 12.7295 18.7293 12.3927 18.7293H9.61303C9.27596 18.7293 9.00271 18.456 9.00271 18.1189C9.00271 16.4942 7.2438 15.4793 5.83708 16.2915C5.54502 16.4601 5.17158 16.36 5.00304 16.0681L3.61337 13.6611C3.44488 13.3692 3.54487 12.9961 3.83671 12.8276C5.2435 12.0154 5.24347 9.98484 3.8367 9.17264C3.54485 9.00414 3.44486 8.63095 3.61335 8.33911L5.00301 5.93215C5.17156 5.64022 5.545 5.54012 5.83706 5.70875C7.24379 6.52092 9.00271 5.50595 9.00271 3.88125C9.00271 3.54417 9.27597 3.27092 9.61304 3.27092ZM12.3927 1.77092L9.61304 1.77092C8.44754 1.77092 7.50271 2.71575 7.50271 3.88125C7.50271 4.3509 6.9941 4.64471 6.58706 4.40971C5.57769 3.82695 4.28681 4.17265 3.70397 5.18215L2.31431 7.58911C1.7316 8.5984 2.07742 9.88897 3.0867 10.4717C3.49349 10.7065 3.49348 11.2937 3.08671 11.5285C2.07743 12.1112 1.73162 13.4018 2.31433 14.4111L3.704 16.8181C4.28684 17.8276 5.57772 18.1732 6.58708 17.5905C6.99411 17.3555 7.50271 17.6493 7.50271 18.1189C7.50271 19.2844 8.44753 20.2293 9.61303 20.2293H12.3927C13.5581 20.2293 14.5027 19.2844 14.5027 18.1192C14.5027 17.6495 15.0111 17.3562 15.4174 17.5908C16.4266 18.1735 17.7169 17.8277 18.2995 16.8186L19.6895 14.411C20.2722 13.4017 19.9264 12.1112 18.9172 11.5285C18.5104 11.2937 18.5104 10.7066 18.9172 10.4717C19.9264 9.889 20.2723 8.59845 19.6896 7.58918L18.2995 5.18161C17.7169 4.1725 16.4266 3.82675 15.4175 4.40936C15.0111 4.644 14.5027 4.35067 14.5027 3.88104C14.5027 2.71579 13.5581 1.77092 12.3927 1.77092ZM8.92395 11C8.92395 9.85242 9.85427 8.9221 11.0019 8.9221C12.1495 8.9221 13.0798 9.85242 13.0798 11C13.0798 12.1476 12.1495 13.0779 11.0019 13.0779C9.85427 13.0779 8.92395 12.1476 8.92395 11ZM11.0019 7.4221C9.02584 7.4221 7.42395 9.02399 7.42395 11C7.42395 12.976 9.02584 14.5779 11.0019 14.5779C12.9779 14.5779 14.5798 12.976 14.5798 11C14.5798 9.02399 12.9779 7.4221 11.0019 7.4221Z"
+                      fill="currentColor" />
+                  </svg>
+                  Account settings
+                </a>
+                <a href="#"
+                  class="px-3 py-2 flex gap-3 dark:hover:bg-white /[0.05] dark:text-gray-400 font-medium items-center text-sm text-gray-700 hover:text-gray-800 transition hover:bg-gray-100 rounded-lg dark:hover:text-white/90">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22" fill="none">
+                    <path fill-rule="evenodd" clip-rule="evenodd"
+                      d="M3.27148 11C3.27148 6.7313 6.73195 3.27083 11.0007 3.27083C15.2694 3.27083 18.7298 6.7313 18.7298 11C18.7298 15.2687 15.2694 18.7292 11.0007 18.7292C6.73195 18.7292 3.27148 15.2687 3.27148 11ZM11.0007 1.77083C5.90352 1.77083 1.77148 5.90287 1.77148 11C1.77148 16.0971 5.90352 20.2292 11.0007 20.2292C16.0978 20.2292 20.2298 16.0971 20.2298 11C20.2298 5.90287 16.0978 1.77083 11.0007 1.77083ZM10 7.94734C10 8.49962 10.4478 8.94734 11 8.94734H11.0008C11.5531 8.94734 12.0008 8.49962 12.0008 7.94734C12.0008 7.39505 11.5531 6.94734 11.0008 6.94734H11C10.4478 6.94734 10 7.39505 10 7.94734ZM11 15.3214C10.5858 15.3214 10.25 14.9856 10.25 14.5714L10.25 10.699C10.25 10.2848 10.5858 9.94902 11 9.94902C11.4143 9.94902 11.75 10.2848 11.75 10.699L11.75 14.5714C11.75 14.9856 11.4143 15.3214 11 15.3214Z"
+                      fill="currentColor" />
+                  </svg>
+                  Support
+                </a>
+                <div class="my-3 h-px bg-gray-200 dark:bg-gray-800"></div>
+                <a href="#"
+                  class="px-3 py-2 flex gap-3 dark:hover:bg-white /[0.05] dark:text-gray-400 font-medium items-center text-sm text-gray-700 hover:text-gray-800 transition hover:bg-gray-100 rounded-lg dark:hover:text-white/90">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 22 22" fill="none">
+                    <path fill-rule="evenodd" clip-rule="evenodd"
+                      d="M13.9679 17.5805C13.5537 17.5805 13.2179 17.2448 13.2179 16.8305L13.2179 13.2454L11.7179 13.2454L11.7179 16.8305C11.7179 18.0732 12.7253 19.0805 13.9679 19.0805H16.8346C18.0773 19.0805 19.0846 18.0732 19.0846 16.8305V5.16309C19.0846 3.92045 18.0773 2.91309 16.8346 2.91309L13.9679 2.91309C12.7253 2.91309 11.7179 3.92045 11.7179 5.16309V8.74543L13.2179 8.74542V5.16309C13.2179 4.74887 13.5537 4.41309 13.9679 4.41309L16.8346 4.41309C17.2488 4.41309 17.5846 4.74887 17.5846 5.16309V16.8305C17.5846 17.2448 17.2488 17.5805 16.8346 17.5805H13.9679ZM2.91797 10.9986C2.91797 11.2142 3.00896 11.4086 3.15464 11.5454L7.37668 15.7701C7.66948 16.0631 8.14436 16.0632 8.43734 15.7704C8.73033 15.4776 8.73048 15.0028 8.43768 14.7098L5.47835 11.7486H14.668C15.0822 11.7486 15.418 11.4128 15.418 10.9986C15.418 10.5844 15.0822 10.2486 14.668 10.2486L5.48212 10.2486L8.4377 7.29092C8.73049 6.99793 8.73032 6.52306 8.43733 6.23026C8.14433 5.93747 7.66946 5.93764 7.37667 6.23064L3.18798 10.4223C3.02297 10.5598 2.91797 10.7669 2.91797 10.9986Z"
+                      fill="currentColor" />
+                  </svg>
+                  Logout
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  <!-- Top Navigation Bar End -->
+  <main class="min-h-screen text-[var(--app-text)] text-gray-800 dark:text-gray-200">
+
+    <div class="p-6">
+      <!-- ADDED: dark:bg-dark-primary -->
+
+      <section class="w-full h-full">
+        <div class="w-full h-screen flex overflow-hidden flex-row gap-6 p-10 transition-all duration-300"
+          id="mainContainer">
+
+          <div id="responsesCard"
+            class=" relative bg-white dark:bg-dark-primary rounded-2xl p-8 flex flex-col transition-all duration-300 shadow-sm hover:shadow-md"
+            style="flex:1 1 auto; height:100%;">
+            <div id="responsesToggle" class="absolute right-0 top-1/2 translate-x-1/2 -translate-y-1/2
+         bg-white dark:bg-dark-primary
+         border border-gray-200 dark:border-gray-800
+         rounded-full w-6 h-6
+         flex items-center justify-center
+         cursor-pointer z-40">
+              &lt;
+            </div>
+
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-4">
+              <h2 class="text-2xl font-semibold text-gray-900 dark:text-white">Responses (12)</h2>
+            </div>
+
+            <!-- Filters Row -->
+            <div class="flex flex-wrap items-center gap-4 mb-6">
+              <!-- Status Filter -->
+              <select class="border border-gray-300 dark:border-gray-800
+         rounded-lg px-3 py-2 text-sm
+         bg-white dark:bg-dark-primary
+         text-gray-800 dark:text-gray-200">
+
+                <option value="">All Status</option>
+                <option value="completed">Completed</option>
+                <option value="pending">Pending</option>
+              </select>
+
+              <!-- Date Filter -->
+              <select class="border border-gray-300 dark:border-gray-800
+         rounded-lg px-3 py-2 text-sm
+         bg-white dark:bg-dark-primary
+         text-gray-800 dark:text-gray-200">
+
+                <option value="">All Dates</option>
+                <option value="last7">Last 7 Days</option>
+                <option value="thisMonth">This Month</option>
+              </select>
+
+              <!-- Search Input -->
+              <input type="text" placeholder="Search by name or answer..." class="border rounded-lg px-3 py-2 text-sm bg-white dark:bg-dark-primary
+                       text-gray-800 dark:text-gray-200
+                       placeholder-gray-400 dark:placeholder-gray-500
+                       flex-1">
+              <!-- ADDED: dark:bg-dark-secondary + dark placeholder -->
+            </div>
+
+            <!-- Scrollable Response List -->
+            <div class="flex flex-col gap-4 overflow-y-auto" style="max-height: calc(100% - 160px);">
+
+              <!-- Example Response Card -->
+              <div class="bg-gray-50 bg-white dark:bg-dark-primary
+                          p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer
+                          border border-gray-200 dark:border-white/10" @click="openResponse({
+                  name: 'John Doe',
+                  date: 'Dec 11, 2025',
+                  answers: [
+                    { q: 'Email', a: '[email protected]' },
+                    { q: 'Feedback', a: 'Lorem ipsum dolor sit amet...' },
+                    { q: 'Rating', a: '9/10' }
+                  ]
+                })">
+                <!-- ADDED: dark:bg-dark-secondary + dark border -->
+
+                <div class="flex justify-between mb-1">
+                  <span class="font-medium text-gray-800 dark:text-gray-200">John Doe</span>
+                  <span class="text-sm text-gray-500 dark:text-gray-400">Dec 11, 2025</span>
+                </div>
+                <p class="text-gray-700 dark:text-gray-300 text-sm line-clamp-2">
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque nec eros eu lacus...
+                </p>
+              </div>
+
+              <!-- Second Response Card -->
+              <div class="bg-gray-50 bg-white dark:bg-dark-primary
+         p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow cursor-pointer
+         border border-gray-200 dark:border-white/10" @click="openResponse({
+    name: 'Jane Smith',
+    date: 'Dec 10, 2025',
+    answers: [
+      { q: 'Email', a: 'jane@email.com' },
+      { q: 'Feedback', a: 'Vestibulum ante ipsum...' },
+       { q: 'Rating', a: '8/10' }
+    ]
+  })">
+
+                <!-- ADDED: same dark treatment as first card -->
+
+                <div class="flex justify-between mb-1">
+                  <span class="font-medium text-gray-800 dark:text-gray-200">Jane Smith</span>
+                  <span class="text-sm text-gray-500 dark:text-gray-400">Dec 10, 2025</span>
+                </div>
+                <p class="text-gray-700 dark:text-gray-300 text-sm line-clamp-2">
+                  Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae...
+                </p>
+              </div>
+            </div>
+
+          </div>
+          <div id="chatbotResizer" class="w-2 cursor-col-resize hover:bg-primary-500/40
+         transition-colors duration-150
+         bg-transparent relative z-20">
+          </div>
+
+          <div id="chatbotWrapper" class="relative flex flex-col transition-all duration-300 flex-shrink-0 ml-auto">
+
+            <!-- Right Card -->
+            <div id="chatbotCard" class="relative bg-white dark:bg-dark-primary
+       rounded-l-2xl p-4 flex flex-col h-full">
+
+              <!-- TOGGLE -->
+              <div id="chatbotToggle" class="absolute left-[-10px] top-1/2 -translate-y-1/2
+             bg-white dark:bg-dark-primary
+             border border-gray-200 dark:border-gray-800 dark:border-gray-700
+             rounded-full w-6 h-6 flex items-center justify-center
+             cursor-pointer z-30">
+                &gt;
+              </div>
+
+              <!-- BODY -->
+              <div id="chatbotBody" class="flex flex-col h-full">
+
+                <!-- MESSAGES -->
+                <div id="chatMessages" class="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-4">
+
+                  <div class="flex justify-start">
+                    <div class="max-w-[80%] px-4 py-3 rounded-2xl rounded-bl-sm
+            bg-gray-100 dark:bg-gray-800
+            text-gray-800 dark:text-gray-200
+            text-sm leading-relaxed whitespace-pre-wrap break-words
+            opacity-100 mix-blend-normal isolate relative z-10">
+                      <!-- ADDED: dark:bg-dark-secondary -->
+                      Hey 👋
+                      I’m your assistant. Ask me anything about these responses.
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- COMPOSER -->
+                <div class="border-t border-gray-200 dark:border-white/10
+           p-3 bg-white dark:bg-dark-primary">
+
+                  <div class="flex items-start gap-2"> <!-- was items-end -->
+                    <textarea id="chatInput" rows="1" placeholder="Type your message…" class="flex-1 resize-none overflow-hidden
+           rounded-xl px-4 py-2
+           bg-gray-50 dark:bg-dark-primary
+           text-gray-900 dark:text-gray-100
+           placeholder-gray-400 dark:placeholder-gray-500
+           border border-gray-300 dark:border-white/10
+           focus:outline-none focus:ring-2 focus:ring-primary-500
+           text-sm align-top">
+  </textarea>
+                    <button id="sendBtn" class="shrink-0 rounded-xl px-4 py-2
+         text-white text-sm font-medium
+         opacity-100 visible relative z-30"
+                      style="background: linear-gradient(90deg, rgb(99,102,241), rgb(79,70,229));">
+                      Send
+                    </button>
+                  </div>
+
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+  </main>
+
+  <!-- BACKDROP -->
+  <div id="responseBackdrop" class="fixed inset-0 z-[998] hidden bg-black/30 backdrop-blur-md">
+  </div>
+
+  <!-- MODAL -->
+  <div id="responseModal" class="fixed inset-0 z-[999] hidden flex items-center justify-center">
+
+    <div id="modalContent" class="bg-white dark:bg-dark-primary
+            text-gray-900 dark:text-gray-100
+            w-full max-w-2xl
+            max-h-[85vh]
+            rounded-2xl shadow-theme-lg
+            flex flex-col animate-scaleIn">
+
+
+      <!-- HEADER -->
+      <div class="flex justify-between items-center px-6 py-4 border-b dark:border-gray-700">
+        <div>
+          <h3 id="modalName" class="text-xl font-semibold text-gray-900 dark:text-white"></h3>
+          <p id="modalDate" class="text-sm text-gray-500 dark:text-gray-400"></p>
+          <!-- ADDED: dark:text-gray-400 -->
+        </div>
+
+        <div class="flex gap-2">
+          <button id="printBtn" class="inline-flex items-center px-3 py-2 rounded-md text-sm text-white shadow-sm"
+            style="background: linear-gradient(90deg, rgb(99,102,241), rgb(79,70,229));">
+            Print
+          </button>
+          <button id="closeBtn" class="inline-flex items-center px-3 py-2 rounded-md text-sm text-white shadow-sm"
+            style="background: linear-gradient(90deg, rgb(99,102,241), rgb(79,70,229));">
+            Close
+          </button>
+        </div>
+      </div>
+
+      <!-- BODY -->
+      <div id="modalBody" class="p-6 overflow-y-auto flex-1 text-gray-900 dark:text-gray-100">
+      </div>
+
+
+
+    </div>
+  </div>
+
+  <script>
+    const modal = document.getElementById('responseModal');
+    const backdrop = document.getElementById('responseBackdrop');
+    const modalContent = document.getElementById('modalContent');
+    const modalName = document.getElementById('modalName');
+    const modalDate = document.getElementById('modalDate');
+    const modalBody = document.getElementById('modalBody');
+    const closeBtn = document.getElementById('closeBtn');
+    const printBtn = document.getElementById('printBtn');
+
+    // Open modal
+    function openResponse(response) {
+      modalName.textContent = response.name;
+      modalDate.textContent = response.date;
+
+      modalBody.innerHTML = "";
+
+      response.answers.forEach(a => {
+        const wrap = document.createElement("div");
+        wrap.className = "mb-6";
+
+        const q = document.createElement("p");
+        q.className = "modal-label font-medium";
+        q.textContent = a.q;
+
+        const v = document.createElement("p");
+        v.className = "modal-value";
+        v.textContent = a.a;
+
+        wrap.appendChild(q);
+        wrap.appendChild(v);
+        modalBody.appendChild(wrap);
+      });
+
+
+      document.querySelector('main').classList.add('page-blur');
+      backdrop.classList.remove('hidden');
+      modal.classList.remove('hidden');
+    }
+
+
+    // Close modal
+    function closeResponse() {
+      modal.classList.add('hidden');
+      backdrop.classList.add('hidden');
+      document.querySelector('main').classList.remove('page-blur');
+      modalBody.innerHTML = '';
+    }
+
+    // Close on close button
+    closeBtn.addEventListener('click', closeResponse);
+
+    // Close on click outside modal content
+    modal.addEventListener('click', e => {
+      if (!modalContent.contains(e.target)) closeResponse();
+    });
+
+    // Close on ESC key
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeResponse();
+    });
+
+    // Print button
+    printBtn.addEventListener('click', () => {
+      const printWindow = window.open('', '', 'width=900,height=650');
+      printWindow.document.open();
+      printWindow.document.body.innerHTML = modalBody.innerHTML;
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+      printWindow.close();
+    });
+
+
+    const responsesCard = document.getElementById("responsesCard");
+    const responsesToggle = document.getElementById("responsesToggle");
+    const chatbotWrapper = document.getElementById("chatbotWrapper");
+    const chatbotToggle = document.getElementById("chatbotToggle");
+let isChatbotCollapsed = false;
+let isResponsesCollapsed = false;
+
+    responsesCard.style.flexBasis = "70%";
+    chatbotWrapper.style.flexBasis = "28%";
+function applyLayout() {
+  // 🔄 HARD RESET (kills all illegal states)
+  chatbotWrapper.classList.remove("collapsed");
+  chatbotWrapper.style.width = "";
+  chatbotWrapper.style.flexBasis = "";
+
+  responsesCard.style.width = "";
+  responsesCard.style.flex = "";
+
+  // 🧩 STATE 1: chatbot collapsed
+  if (isChatbotCollapsed) {
+    chatbotWrapper.classList.add("collapsed");
+    responsesCard.style.flex = "1 1 auto";
+    return;
+  }
+
+  // 🧩 STATE 2: responses collapsed
+  // STATE 2: responses collapsed
+if (isResponsesCollapsed) {
+  responsesCard.style.flex = "0 0 320px";
+  chatbotWrapper.style.flex = "0 0 calc(100% - 320px)";
+  chatbotWrapper.style.flexBasis = "calc(100% - 320px)";
+  return;
+}
+
+
+  // 🧩 STATE 3: normal layout
+  responsesCard.style.flex = "0 0 70%";
+  chatbotWrapper.style.flex = "0 0 28%";
+}
+
+
+    let responsesCollapsed = false;
+
+   
+
+
+   responsesToggle.addEventListener("click", () => {
+  isResponsesCollapsed = !isResponsesCollapsed;
+
+  // mutual exclusion
+  if (isResponsesCollapsed) {
+    isChatbotCollapsed = false;
+  }
+
+  applyLayout();
+});
+chatbotToggle.addEventListener("click", () => {
+  isChatbotCollapsed = !isChatbotCollapsed;
+
+  // mutual exclusion
+  if (isChatbotCollapsed) {
+    isResponsesCollapsed = false;
+  }
+
+  applyLayout();
+});
+applyLayout();
+
+
+  </script>
+
+  <script>
+    const chatMessages = document.getElementById("chatMessages");
+    const chatInput = document.getElementById("chatInput");
+    const sendBtn = document.getElementById("sendBtn");
+
+    function scrollToBottom() {
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+    }
+
+    function addMessage(text, role = "assistant") {
+      const row = document.createElement("div");
+      row.className = `flex ${role === "user" ? "justify-end" : "justify-start"}`;
+
+      const bubble = document.createElement("div");
+      bubble.className =
+        role === "user"
+          ? `max-w-[75%] px-4 py-2 rounded-2xl rounded-br-sm
+       bg-transparent
+       text-white
+       text-sm leading-relaxed whitespace-pre-wrap break-words
+       opacity-100 mix-blend-normal isolate
+       relative z-10`
+          : `max-w-[80%] px-4 py-3 rounded-2xl rounded-bl-sm
+       bg-gray-100 dark:bg-gray-800
+text-gray-800 dark:text-gray-200
+
+       text-sm leading-relaxed whitespace-pre-wrap break-words
+       opacity-100 mix-blend-normal isolate
+       relative z-10`;
+      if (role === "user") {
+        bubble.style.background =
+          "linear-gradient(90deg, rgb(99,102,241), rgb(79,70,229))";
+        bubble.style.color = "#ffffff";
+      }
+
+      const textNode = document.createTextNode(text);
+      bubble.appendChild(textNode);
+
+      if (role === "user") {
+        bubble.style.color = "#ffffff";
+      }
+      row.appendChild(bubble);
+      chatMessages.appendChild(row);
+
+      scrollToBottom();
+    }
+
+    sendBtn.addEventListener("click", () => {
+      const text = chatInput.value.trim();
+      if (!text) return;
+
+      addMessage(text, "user");
+      chatInput.value = "";
+chatInput.style.height = "auto";
+chatInput.style.overflowY = "hidden";
+
+      // fake assistant reply (placeholder)
+      setTimeout(() => {
+        addMessage("Got it. I’ll analyze that response for you.");
+      }, 600);
+    });
+
+    chatInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendBtn.click();
+      }
+    });
+
+    const MAX_CHAT_INPUT_HEIGHT = 140;
+
+chatInput.addEventListener("input", () => {
+  chatInput.style.height = "auto";
+
+  const newHeight = Math.min(
+    chatInput.scrollHeight,
+    MAX_CHAT_INPUT_HEIGHT
+  );
+
+  chatInput.style.height = newHeight + "px";
+  chatInput.style.overflowY =
+    chatInput.scrollHeight > MAX_CHAT_INPUT_HEIGHT ? "auto" : "hidden";
+});
+
+  </script>
+  <script defer src="assets/js/alpine.min.js"></script>
+  <script defer src="assets/js/glightbox.min.js"></script>
+  <script defer src="assets/js/app.js"></script>
+  <script>
+    document.documentElement.classList.add('dark');
+  </script>
+  <script>
+    (() => {
+      const container = document.getElementById("mainContainer");
+      const resizer = document.getElementById("chatbotResizer");
+      const responses = document.getElementById("responsesCard");
+      const chatbot = document.getElementById("chatbotWrapper");
+
+      let isDragging = false;
+const responsesToggle = document.getElementById("responsesToggle");
+
+let responsesCollapsed = false;
+
+responsesToggle.addEventListener("click", () => {
+  responsesCollapsed = !responsesCollapsed;
+
+  const containerWidth = container.getBoundingClientRect().width;
+
+  if (responsesCollapsed) {
+    const minResponsesWidth = 320;
+
+    chatbot.style.width = `${containerWidth - minResponsesWidth}px`;
+
+    responsesToggle.innerHTML = "&gt;";
+  } else {
+    const responsesWidth = containerWidth * 0.7;
+    const chatbotWidth = containerWidth * 0.28;
+
+    chatbot.style.width = `${chatbotWidth}px`;
+
+    responsesToggle.innerHTML = "&lt;";
+  }
+});
+
+      resizer.addEventListener("mousedown", (e) => {
+        isDragging = true;
+        document.body.style.cursor = "col-resize";
+        document.body.style.userSelect = "none";
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        if (!isDragging) return;
+
+        const containerRect = container.getBoundingClientRect();
+        const offsetX = e.clientX - containerRect.left;
+
+        const newChatbotWidth = containerRect.width - offsetX;
+
+        if (newChatbotWidth < 320) return;
+        if (newChatbotWidth > containerRect.width) return;
+
+        chatbot.style.width = `${newChatbotWidth}px`;
+        responses.style.width = `${containerRect.width - newChatbotWidth}px`;
+      });
+
+      document.addEventListener("mouseup", () => {
+        if (!isDragging) return;
+        isDragging = false;
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      });
+    })();
+  </script>
+  
+
+</body>
+
+</html>
